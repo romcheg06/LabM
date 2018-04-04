@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.1)
+project(LabM)
+find_package(MPI REQUIRED)
+
+message(STATUS MPI_CXX_COMPILER ${MPI_CXX_COMPILER})
+message(STATUS MPI_CXX_INCLUDE_PATH ${MPI_CXX_INCLUDE_PATH})
+message(STATUS MPI_CXX_COMPILE_FLAGS ${MPI_CXX_COMPILE_FLAGS})
+message(STATUS MPI_CXX_LINK_FLAGS ${MPI_CXX_LINK_FLAGS})
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
+include_directories(${MPI_CXX_INCLUDE_PATH})
+include_directories(Utils)
+
+add_subdirectory(LabM1)
