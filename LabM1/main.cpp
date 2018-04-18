@@ -103,7 +103,10 @@ public:
      */
     virtual void execute()
     {
+        double calculationTime = MPI_Wtime();
         const std::vector<int>& results = getResults(m_rank, a * b, m_processesCount);
+        calculationTime = MPI_Wtime() - calculationTime;
+        printf("Process %d/%d execution time: %.6f\n", m_rank, m_processesCount, calculationTime);
 
         MPI_Send(results.data(), results.size(), MPI_INT, 0, 0, MPI_COMM_WORLD);
     }
@@ -129,6 +132,9 @@ public:
 
         std::vector<int> results = getResults(m_rank, a * b, m_processesCount);
 
+        const double calculationTime = MPI_Wtime() - mainTime;
+        printf("Process %d/%d execution time: %.6f\n", m_rank, m_processesCount, calculationTime);
+
         for(unsigned process = 1; process < m_processesCount; ++process)
         {
             const size_t resultsOldSize = results.size();
@@ -153,7 +159,7 @@ public:
         }
 
         std::cout << "Results end" << std::endl;
-        std::cout << "Execution time: " << mainTime << std::endl;
+        std::cout << "Main process execution time: " << mainTime << std::endl;
         std::cout << "Processes: " << m_processesCount << std::endl;
     }
 }; // end of MainProcess
