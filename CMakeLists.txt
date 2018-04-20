@@ -14,3 +14,4 @@ include_directories(${MPI_CXX_INCLUDE_PATH})
 include_directories(Utils)
 
 add_subdirectory(LabM1)
+add_subdirectory(LabM2)
