@@ -19,7 +19,7 @@ struct ExtendedSlice
         m_rightExtendedBound.resize(m_strideY + 2, 0);
     }
 
-    values_t value(size_t x, size_t y) const
+    values_t value(const size_t x, const size_t y) const
     {
         if(x == 0)
             return m_leftExtendedBound[y];
@@ -36,7 +36,7 @@ struct ExtendedSlice
         return m_slice.m_values[(y - 1) * m_strideX + x - 1];
     }
 
-    values_t& value(size_t x, size_t y)
+    values_t& value(const size_t x, const size_t y)
     {
         if(x == 0)
             return m_leftExtendedBound[y];

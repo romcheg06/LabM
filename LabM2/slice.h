@@ -23,13 +23,13 @@ struct Slice
         m_stride{0}
     {}
 
-    Slice(size_t globalX, size_t globalY, size_t stride):
+    Slice(const size_t globalX, const size_t globalY, const size_t stride):
         m_globalX{globalX},
         m_globalY{globalY},
         m_stride{stride}
     {}
 
-    static Slice makeRandomSlice(size_t globalX, size_t globalY, size_t strideX, size_t strideY)
+    static Slice makeRandomSlice(const size_t globalX, const size_t globalY, const size_t strideX, const size_t strideY)
     {
         Slice slice(globalX, globalY, strideX);
         slice.m_values.resize(strideX * strideY, 0);
@@ -43,7 +43,7 @@ struct Slice
         return slice;
     }
 
-    static Slice makeZeroSlice(size_t globalX, size_t globalY, size_t strideX, size_t strideY)
+    static Slice makeZeroSlice(const size_t globalX, const size_t globalY, const size_t strideX, const size_t strideY)
     {
         Slice slice(globalX, globalY, strideX);
         slice.m_values.resize(strideX * strideY, 0);
@@ -66,7 +66,7 @@ struct Field
         m_height{0}
     {}
 
-    Field(size_t width, size_t height):
+    Field(const size_t width, const size_t height):
         m_width{width},
         m_height{height}
     {}

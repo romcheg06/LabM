@@ -41,7 +41,7 @@ typedef std::pair<int/*кол-во по горизонтали*/, int/*кол-в
  * \param processesCount Количество процессов
  * \return размерности процессов.
  */
-ProcessesDims getProcessesDims(int processesCount)
+ProcessesDims getProcessesDims(const int processesCount)
 {
     int dimX = processesCount > 1 ? 2 : 1;
     int dimY = processesCount == 4 ? 2 : 1;
@@ -58,7 +58,7 @@ typedef std::pair<size_t/*горизонталь*/, size_t/*вертикаль*/
  * \param processesCount Количество процессов
  * \return размерности одного куска.
  */
-FieldStrides getFieldStrides(int processesCount)
+FieldStrides getFieldStrides(const int processesCount)
 {
     const ProcessesDims processesDims = getProcessesDims(processesCount);
 
@@ -71,7 +71,7 @@ FieldStrides getFieldStrides(int processesCount)
  * \param comm
  * \param processesCount
  */
-void createNetCommunicator(MPI_Comm* comm, int processesCount)
+void createNetCommunicator(MPI_Comm* const comm, const int processesCount)
 {
     const ProcessesDims processesDims = getProcessesDims(processesCount);
 
@@ -86,7 +86,7 @@ void createNetCommunicator(MPI_Comm* comm, int processesCount)
  * \param extendedSlice кусок поля
  * \param netComm коммуникатор декартовой топологии
  */
-void doLifeSteps(ExtendedSlice& extendedSlice, MPI_Comm netComm)
+void doLifeSteps(ExtendedSlice& extendedSlice, const MPI_Comm netComm)
 {
     static bool firstRun = true;
     static int upperRank, lowerRank, leftRank, rightRank;
@@ -170,7 +170,7 @@ public:
      * \param rank номер процесса
      * \param size общее число запущенных процессов
      */
-    LabWorkerProcess(int rank, int size): WorkerProcess(rank, size)
+    LabWorkerProcess(const int rank, const int size): WorkerProcess(rank, size)
     {}
 
     /*!
@@ -232,7 +232,7 @@ public:
      * \brief Конструктор
      * \param size Количество исполняемых процессов
      */
-    LabMainProcess(int size):
+    LabMainProcess(const int size):
         MainProcess(size),
         m_field(FIELD_X_SIZE, FIELD_Y_SIZE)
     {
@@ -329,7 +329,7 @@ private:
 
 }; // end of MainProcess
 
-std::unique_ptr<Process> makeProcess(int rank, int size)
+std::unique_ptr<Process> makeProcess(const int rank, const int size)
 {
     if(rank == 0)
         return std::unique_ptr<Process>(new LabMainProcess(size));
