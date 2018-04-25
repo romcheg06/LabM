@@ -46,8 +46,8 @@ void MainWindow::updateTable()
         iar >> field;
 
         ui->tableWidget->setRowCount(0);
-        ui->tableWidget->setRowCount(field.m_width);
-        ui->tableWidget->setColumnCount(field.m_height);
+        ui->tableWidget->setRowCount(field.m_height);
+        ui->tableWidget->setColumnCount(field.m_width);
 
         for(Slice& slice : field.m_slices)
         {

@@ -6,13 +6,13 @@
 #include <fstream>
 
 //Если определено, приложение вставляет задержки после каждой итерации
-#define DELAYS
+//#define DELAYS
 
 //Если определено, производится периодическая запись поля в файл
-#define FILE_SAVE
+//#define FILE_SAVE
 
 //Если определено, поле заполняется тестовым примером иначе - случайно
-#define EXAMPLE
+//#define EXAMPLE
 
 #ifdef DELAYS
 #   include <chrono>
@@ -21,15 +21,17 @@
 #endif
 
 const int PERIODIC_FIELD = 1;//!< Периодическое поле (1 - да / 0 - нет)
-const size_t FIELD_X_SIZE = 20u;//!< Размер поля по ширине
-const size_t FIELD_Y_SIZE = 20u;//!< Размер поля по высоте
-const size_t STEPS_PER_ITERATION = 1u;//!<  Количество шагов игры между сбросами состояния поля на диск
-const size_t ITERATIONS = 500u;//!< Количество итераций (одна итерация = STEPS_PER_ITERATION шагов)
+const size_t FIELD_X_SIZE = 4200u;//!< Размер поля по ширине
+const size_t FIELD_Y_SIZE = 4200u;//!< Размер поля по высоте
+const size_t STEPS_PER_ITERATION = 10u;//!<  Количество шагов игры между сбросами состояния поля на диск
+const size_t ITERATIONS = 10u;//!< Количество итераций (одна итерация = STEPS_PER_ITERATION шагов)
 
+//Тэги сообщений
 const int SENT_UP_BOUND_TAG = 1;
 const int SENT_DOWN_BOUND_TAG = 2;
 const int SENT_LEFT_BOUND_TAG = 3;
 const int SENT_RIGHT_BOUND_TAG = 4;
+const int SENT_SLICE_TAG = 5;
 
 /*!
  * \brief Размерности разбиения процессов в сетке
@@ -37,15 +39,43 @@ const int SENT_RIGHT_BOUND_TAG = 4;
 typedef std::pair<int/*кол-во по горизонтали*/, int/*кол-во по вертикали*/> ProcessesDims;
 
 /*!
- * \brief олучить размерности разбиения процессов в сетке. Приложение рассчитано на 1, 2 или 4 процесса
+ * \brief олучить размерности разбиения процессов в сетке.
  * \param processesCount Количество процессов
  * \return размерности процессов.
  */
 ProcessesDims getProcessesDims(const int processesCount)
 {
-    int dimX = processesCount > 1 ? 2 : 1;
-    int dimY = processesCount == 4 ? 2 : 1;
+    int dimY = static_cast<int>(sqrt(processesCount));
+    int dimX = processesCount / dimY;
+
+    while(processesCount != dimX * dimY )
+    {
+        ++dimX;
+        dimY = processesCount / dimX;
+    }
+
     return std::make_pair(dimX, dimY);
+}
+
+/*!
+ * \brief Проверяет соответствие размерности поля количеству процессов.
+ * Поле должно делиться на целое количество одинаковых кусков в соответствии с разбиением процессов
+ * \param processesCount Количество процессов
+ * \return
+ */
+bool assertFieldSize(const int processesCount)
+{
+    const ProcessesDims processesDims = getProcessesDims(processesCount);
+
+    const size_t xDiv = FIELD_X_SIZE / processesDims.first;
+    if(FIELD_X_SIZE != xDiv * processesDims.first)
+        return false;
+
+    const size_t yDiv = FIELD_Y_SIZE / processesDims.second;
+    if(FIELD_Y_SIZE != yDiv * processesDims.second)
+        return false;
+
+    return true;
 }
 
 /*!
@@ -54,7 +84,7 @@ ProcessesDims getProcessesDims(const int processesCount)
 typedef std::pair<size_t/*горизонталь*/, size_t/*вертикаль*/> FieldStrides;
 
 /*!
- * \brief Получить размерности разбиения поля на куски по процессам. Приложение рассчитано на 1, 2 или 4 процесса
+ * \brief Получить размерности разбиения поля на куски по процессам.
  * \param processesCount Количество процессов
  * \return размерности одного куска.
  */
@@ -102,6 +132,9 @@ void doLifeSteps(ExtendedSlice& extendedSlice, const MPI_Comm netComm)
         firstRun = false;
     }
 
+    int rank;
+    MPI_Comm_rank(netComm, &rank);
+
     size_t steps = STEPS_PER_ITERATION;
     while(steps)
     {
@@ -123,6 +156,7 @@ void doLifeSteps(ExtendedSlice& extendedSlice, const MPI_Comm netComm)
             MPI_Bsend(lastRow.data(), lastRow.size(),
                       MPI_VALUES_TYPE, lowerRank, SENT_DOWN_BOUND_TAG, netComm);
         }
+
         if(upperRank != MPI_PROC_NULL)
         {
             MPI_Recv(extendedSlice.m_upperBound.data(), extendedSlice.m_upperBound.size(),
@@ -208,13 +242,11 @@ public:
             doLifeSteps(extendedSlice, netComm);
 
             MPI_Send(slice.m_values.data(), slice.m_values.size(),
-                     MPI_VALUES_TYPE, mainProcessNetRank, 0, netComm);
+                     MPI_VALUES_TYPE, mainProcessNetRank, SENT_SLICE_TAG, netComm);
 
             --iterations;
 
-#ifdef DELAYS
             MPI_Barrier(netComm);
-#endif
         }
 
         calculationTime = MPI_Wtime() - calculationTime;
@@ -247,6 +279,7 @@ public:
                 m_field.m_slices.push_back(
                     Slice::makeRandomSlice(globalX, globalY, strideX, strideY));
 #else
+                std::cout << "slice x: " << globalX << " y:" << globalY << std::endl;
                 Slice slice = Slice::makeZeroSlice(globalX, globalY, strideX, strideY);
                 if(globalX == 0 && globalY == 0)
                 {
@@ -300,10 +333,10 @@ public:
             for(int process = 0; process < m_processesCount - 1; ++process)
             {
 
-                MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, netComm, &status);
+                MPI_Probe(MPI_ANY_SOURCE, SENT_SLICE_TAG, netComm, &status);
                 const int sender = status.MPI_SOURCE;
                 MPI_Recv(m_field.m_slices[sender].m_values.data(), m_field.m_slices[sender].m_values.size(),
-                         MPI_VALUES_TYPE, sender, MPI_ANY_TAG, netComm, &status);
+                         MPI_VALUES_TYPE, sender, SENT_SLICE_TAG, netComm, &status);
             }
 
 #ifdef FILE_SAVE
@@ -316,8 +349,8 @@ public:
 
 #ifdef DELAYS
             std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
-            MPI_Barrier(netComm);
 #endif
+            MPI_Barrier(netComm);
         }
 
         mainTime = MPI_Wtime() - mainTime;
@@ -346,11 +379,12 @@ int main(int argc, char *argv[])
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);        /* get current process id */
     MPI_Comm_size (MPI_COMM_WORLD, &size);        /* get number of processes */
 
-    if(size > 4 || size == 3)
+    if(!assertFieldSize(size))
     {
-        std::cout << "Only 1, 2 or 4 processes supported!" << std::endl;
-        MPI_Finalize(); /* ends MPI */
-        return 0;
+       if(rank == 0)
+            std::cout << "Program can not be run with current field size and " << size << " processes!" << std::endl;
+       MPI_Finalize(); /* ends MPI */
+       return 0;
     }
 
     std::unique_ptr<Process> process = makeProcess(rank, size);
