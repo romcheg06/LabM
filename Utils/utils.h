@@ -13,7 +13,7 @@ public:
      * \brief Конструктор
      * \param size общее число запущенных процессов
      */
-    explicit Process(int size): m_processesCount(size)
+    explicit Process(const int size): m_processesCount(size)
     {}
 
     Process(const Process&) = delete;
@@ -45,7 +45,7 @@ public:
      * \param rank номер процесса
      * \param size общее число запущенных процессов
      */
-    WorkerProcess(int rank, int size):
+    WorkerProcess(const int rank, const int size):
         Process(size),
         m_rank(rank)
     {}
@@ -64,7 +64,7 @@ public:
      * \brief Конструктор
      * \param size Количество исполняемых процессов
      */
-    MainProcess(int size): WorkerProcess(0, size)
+    MainProcess(const int size): WorkerProcess(0, size)
     {
     }
 }; // end of MainProcess

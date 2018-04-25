@@ -95,7 +95,7 @@ public:
      * \param rank номер процесса
      * \param size общее число запущенных процессов
      */
-    LabWorkerProcess(int rank, int size): WorkerProcess(rank, size)
+    LabWorkerProcess(const int rank, const int size): WorkerProcess(rank, size)
     {}
 
     /*!
@@ -122,7 +122,7 @@ public:
      * \brief Конструктор
      * \param size Количество исполняемых процессов
      */
-    LabMainProcess(int size): MainProcess(size)
+    LabMainProcess(const int size): MainProcess(size)
     {
     }
 
@@ -164,7 +164,7 @@ public:
     }
 }; // end of MainProcess
 
-std::unique_ptr<Process> makeProcess(int rank, int size)
+std::unique_ptr<Process> makeProcess(const int rank, const int size)
 {
     if(rank == 0)
         return std::unique_ptr<Process>(new LabMainProcess(size));
