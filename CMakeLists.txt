@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.1)
 project(LabM)
+
+#Fedora find mpi workaround
+set(CMAKE_PREFIX_PATH /usr/lib64/mpich)
+
 find_package(MPI REQUIRED)
 
 message(STATUS MPI_CXX_COMPILER ${MPI_CXX_COMPILER})
@@ -15,3 +19,4 @@ include_directories(Utils)
 
 add_subdirectory(LabM1)
 add_subdirectory(LabM2)
+add_subdirectory(LabM3)

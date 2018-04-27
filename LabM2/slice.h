@@ -33,6 +33,8 @@ struct Slice
     {
         Slice slice(globalX, globalY, strideX);
         slice.m_values.resize(strideX * strideY, 0);
+
+        srand(time(0));
         for(auto& value : slice.m_values)
         {
             int randomval = rand() % 10;
