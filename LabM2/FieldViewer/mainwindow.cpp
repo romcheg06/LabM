@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "lab2types.h"
 #include "extendedslice.h"
 #include <QDebug>
 #include <QStyle>

@@ -1,9 +1,9 @@
-set(APP_NAME labM2)
+set(APP_NAME labM4)
 
 set(HEADERS ../Utils/utils.h
             ../Utils/slice.h
             ../Utils/extendedslice.h
-            lab2types.h)
+            lab4types.h)
 
 FIND_PACKAGE(Boost COMPONENTS serialization REQUIRED)
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
@@ -22,5 +22,4 @@ if(MPI_CXX_LINK_FLAGS)
     LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
 endif()
 
-add_subdirectory(FieldViewer)
 

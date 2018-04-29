@@ -1,3 +1,5 @@
+#include "lab2types.h"
+
 #include "utils.h"
 #include "extendedslice.h"
 

@@ -3,11 +3,21 @@
 
 #include "slice.h"
 
+#include <cmath>
+
 /*!
- * \brief расширенный кусок поля с границами и возможностью сделать один шаг игры
+ * \brief расширенный кусок поля с границами и возможностью сделать
+ * один шаг игры или итерацию методом Зейделя
  */
 struct ExtendedSlice
 {
+    enum ZeidelStepColor
+    {
+      RED,
+      BLACK,
+      INVALID_COLOR
+    };
+
     explicit ExtendedSlice(Slice& slice):
                 m_slice(slice),
                 m_strideX{m_slice.m_stride},
@@ -63,6 +73,15 @@ struct ExtendedSlice
         return std::vector<values_t>{m_slice.m_values.end() - m_strideX, m_slice.m_values.end()};
     }
 
+    std::vector<values_t> getFirstColumn() const
+    {
+        std::vector<values_t> column;
+        for(size_t i = 0; i < m_strideY; ++i)
+            column.push_back(m_slice.m_values[i * m_strideX]);
+
+        return column;
+    }
+
     std::vector<values_t> getFirstExtendedColumn() const
     {
         std::vector<values_t> column;
@@ -70,6 +89,15 @@ struct ExtendedSlice
         for(size_t i = 0; i < m_strideY; ++i)
             column.push_back(m_slice.m_values[i * m_strideX]);
         column.push_back(m_lowerBound[0]);
+
+        return column;
+    }
+
+    std::vector<values_t> getLastColumn() const
+    {
+        std::vector<values_t> column;
+        for(size_t i = 0; i < m_strideY; ++i)
+            column.push_back(m_slice.m_values[i * m_strideX + m_strideX - 1]);
 
         return column;
     }
@@ -114,6 +142,58 @@ struct ExtendedSlice
             }
 
         m_slice.m_values = nextStepSliceValues;
+    }
+
+    /*!
+     * \brief Производит итерацию методом Зейделя с красно/черным разбиением точек
+     * \param color Цвет точек для которых нужно провести итерацию
+     */
+    void zeidelStep(const ZeidelStepColor color)
+    {
+      assert(color != INVALID_COLOR);
+      size_t index = (color == RED) ? 0 : 1;
+
+      for(;index < m_slice.m_values.size(); index += 2)
+      {
+        const size_t extendedXIndex = index % m_strideX + 1;
+        const size_t extendenYIndex = index / m_strideX + 1;
+        value(extendedXIndex, extendenYIndex) =
+            (
+              value(extendedXIndex - 1, extendenYIndex) +
+              value(extendedXIndex + 1, extendenYIndex) +
+              value(extendedXIndex, extendenYIndex - 1) +
+              value(extendedXIndex, extendenYIndex + 1)
+            ) / 4.;
+      }
+    }
+
+    /*!
+     * \brief Вычисление максимального модуля невязки в куске
+     * \param h Абсолютный шаг сетки
+     * \return Максимальный модуль невязки
+     */
+    values_t maxResidual(const values_t h)
+    {
+      values_t result = 0;
+      const values_t h2 = pow(h, 2);
+
+      for(size_t xIndex = 0; xIndex < m_strideX; ++xIndex)
+        for(size_t yIndex = 0; yIndex < m_strideY; ++yIndex)
+        {
+          const size_t extendedXIndex = xIndex + 1;
+          const size_t extendenYIndex = yIndex + 1;
+          values_t currentValue =
+              std::abs(
+                        (value(extendedXIndex - 1, extendenYIndex) -
+                         2. * value(extendedXIndex, extendenYIndex) +
+                         value(extendedXIndex + 1, extendenYIndex)) / h2 +
+                        (value(extendedXIndex, extendenYIndex - 1) -
+                         2. * value(extendedXIndex, extendenYIndex) +
+                         value(extendedXIndex, extendenYIndex + 1)) / h2
+                       );
+          result = std::max(result, currentValue);
+        }
+      return result;
     }
 
     Slice& m_slice;

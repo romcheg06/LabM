@@ -9,9 +9,6 @@
 #include <ctime>
 #include <cstdlib>
 
-typedef char values_t;
-#define MPI_VALUES_TYPE MPI_CHAR
-
 /*!
  * \brief Кусок поля
  */
