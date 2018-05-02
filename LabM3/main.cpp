@@ -14,8 +14,8 @@
 #include <ctime>
 #include <cstdlib>
 
-const size_t N = 4200;//!< Размер системы уравнений
-const size_t ITERATIONS = 5000;
+const size_t N = 10200;//!< Размер системы уравнений
+const size_t ITERATIONS = 1000;
 
 //Типы элементов
 typedef double values_t;
@@ -95,18 +95,16 @@ protected:
      */
     void iterate()
     {
-      const values_t residualDotOldPart = matrixVectorMul(m_residualVectorPart, m_residualVectorPart)[0];
-      values_t residualDotOld = 0;
-      MPI_Allreduce(&residualDotOldPart, &residualDotOld, 1, MPI_VALUES_TYPE, MPI_SUM, MPI_COMM_WORLD);
+      values_t residualDotOld = matrixVectorMul(m_residualVectorPart, m_residualVectorPart)[0];
+      MPI_Allreduce(MPI_IN_PLACE, &residualDotOld, 1, MPI_VALUES_TYPE, MPI_SUM, MPI_COMM_WORLD);
 
       size_t iterations = ITERATIONS;
       while(iterations)
       {
         aMatrixMulDirVectorPart = matrixVectorMul(m_aMatrixPart, m_dirVector);
 
-        const values_t alphaDivisorPart = matrixVectorMul(aMatrixMulDirVectorPart, m_dirVector.begin() + m_rank * m_stride, m_stride)[0];
-        values_t alphaDivisor = 0;
-        MPI_Allreduce(&alphaDivisorPart, &alphaDivisor, 1, MPI_VALUES_TYPE, MPI_SUM, MPI_COMM_WORLD);
+        values_t alphaDivisor = matrixVectorMul(aMatrixMulDirVectorPart, m_dirVector.begin() + m_rank * m_stride, m_stride)[0];
+        MPI_Allreduce(MPI_IN_PLACE, &alphaDivisor, 1, MPI_VALUES_TYPE, MPI_SUM, MPI_COMM_WORLD);
 
         const values_t alpha = residualDotOld / alphaDivisor;
 
@@ -116,20 +114,20 @@ protected:
           m_residualVectorPart[index] = m_residualVectorPart[index] - alpha * aMatrixMulDirVectorPart[index];
         }
 
-        const values_t residualDotNewPart = matrixVectorMul(m_residualVectorPart, m_residualVectorPart)[0];
-        values_t residualDotNew = 0;
-        MPI_Allreduce(&residualDotNewPart, &residualDotNew, 1, MPI_VALUES_TYPE, MPI_SUM, MPI_COMM_WORLD);
+        values_t residualDotNew = matrixVectorMul(m_residualVectorPart, m_residualVectorPart)[0];
+        MPI_Allreduce(MPI_IN_PLACE, &residualDotNew, 1, MPI_VALUES_TYPE, MPI_SUM, MPI_COMM_WORLD);
 
         const values_t betta = residualDotNew / residualDotOld;
         residualDotOld = residualDotNew;
 
         for(size_t index = 0; index < static_cast<size_t>(m_stride); ++index)
         {
-          m_dirVectorPart[index] = m_residualVectorPart[index] + betta * m_dirVector[globalVectorIndex(index)];
+          m_dirVector[globalVectorIndex(index)] = m_residualVectorPart[index] + betta * m_dirVector[globalVectorIndex(index)];
         }
 
-        MPI_Allgather(m_dirVectorPart.data(), m_stride, MPI_VALUES_TYPE, m_dirVector.data(), m_stride,
+        MPI_Allgather(MPI_IN_PLACE, m_stride, MPI_VALUES_TYPE, m_dirVector.data(), m_stride,
                       MPI_VALUES_TYPE, MPI_COMM_WORLD);
+
         --iterations;
       }
     }
@@ -268,7 +266,7 @@ public:
           check += m_bVector[index] - multVector[index];
 
         std::cout << "RESULT:" << std::endl;
-        printMatrix(m_xVector);
+        //printMatrix(m_xVector);
         std::cout << "Check delta sum: " << check << std::endl;
     }
 
